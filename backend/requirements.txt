@@ -1,0 +1,20 @@
+# Core Framework and API
+fastapi>=0.115.0
+uvicorn>=0.34.0
+pydantic>=2.10.0
+
+# Scientific & Data Processing
+numpy>=2.0.0
+pandas>=2.2.0
+scipy>=1.14.0
+
+# Machine Learning & Time Series
+scikit-learn>=1.6.0
+xgboost>=2.0.0
+statsmodels>=0.14.0
+torch>=2.2.0
+shap>=0.45.0
+
+# Visualization & Reporting
+matplotlib>=3.9.0
+python-multipart>=0.0.9

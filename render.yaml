@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: aquifer-decision-support
+    runtime: python
+    buildCommand: "pip install --upgrade pip && pip install torch --index-url https://download.pytorch.org/whl/cpu && pip install -r backend/requirements.txt && cd backend && python -m app.core.data_generator"
+    startCommand: "cd backend && python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: PYTHONUNBUFFERED
+        value: 1
+    plan: free

@@ -1,0 +1,18 @@
+services:
+  aquifer-system:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: aquifer-decision-support
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PORT=8000
+    volumes:
+      # Persist generated data across container restarts
+      - aquifer-data:/app/backend/app/data
+
+volumes:
+  aquifer-data:

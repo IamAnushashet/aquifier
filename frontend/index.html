@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Aquifer Decision-Support System | Groundwater Forecasting & Smart Management</title>
+  <meta name="description" content="AI-Powered Aquifer Groundwater Level Forecasting, Dynamic Risk Assessment, Explainable AI, Anomaly Detection, and Smart Water Management Decision-Support System.">
+  
+  <!-- Modern Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet CSS for GIS Mapping -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <!-- Chart.js for High-Performance Scientific Visualizations -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Header / Top Bar -->
+  <header class="app-header">
+    <div class="header-branding">
+      <div class="logo-badge">
+        <svg class="water-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+          <path d="M12 12a3 3 0 0 0-3 3"></path>
+        </svg>
+      </div>
+      <div>
+        <h1 class="header-title">AI-Powered Aquifer Forecasting & Smart Water Management</h1>
+        <p class="header-subtitle">Multi-Horizon Forecasting • Dynamic Risk Index • Explainable AI • Policy Simulator</p>
+      </div>
+    </div>
+    
+    <div class="header-controls">
+      <div class="well-select-container">
+        <label for="wellSelect" class="control-label">Observation Station:</label>
+        <select id="wellSelect" class="form-select">
+          <option value="WELL-01" selected>WELL-01: Central Alluvial Station</option>
+          <option value="WELL-02">WELL-02: Northern Ridge Recharge Zone</option>
+          <option value="WELL-03">WELL-03: Eastern Urban Sector</option>
+          <option value="WELL-04">WELL-04: Southern Semi-Arid Valley</option>
+          <option value="WELL-05">WELL-05: Western Agricultural Delta</option>
+        </select>
+      </div>
+      
+      <div id="headerRiskBadge" class="status-pill status-moderate">
+        <span class="status-dot"></span>
+        <span id="headerRiskText">Moderate Risk (42.5)</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Top Real-Time KPI Ribbon -->
+  <section class="kpi-ribbon" id="kpiRibbon">
+    <div class="kpi-card" id="kpiCurrentDepth">
+      <div class="kpi-label">Current Water Table Depth</div>
+      <div class="kpi-value"><span id="valCurrentDepth">25.30</span> <span class="kpi-unit">m bgl</span></div>
+      <div class="kpi-subtext" id="subCurrentDepth">Safe: &lt;14.0m | Critical: &gt;28.0m</div>
+    </div>
+    
+    <div class="kpi-card" id="kpiForecast30d">
+      <div class="kpi-label">30-Day Forecast Level</div>
+      <div class="kpi-value"><span id="valForecast30d">24.37</span> <span class="kpi-unit">m bgl</span></div>
+      <div class="kpi-subtext" id="subForecastDelta">Net Change: -0.93m (Recovery)</div>
+    </div>
+    
+    <div class="kpi-card" id="kpiRiskIndex">
+      <div class="kpi-label">Groundwater Risk Index</div>
+      <div class="kpi-value"><span id="valRiskIndex">39.7</span> <span class="kpi-unit">/100</span></div>
+      <div class="kpi-subtext" id="subRiskCategory">Moderate Vulnerability</div>
+    </div>
+    
+    <div class="kpi-card" id="kpiHealthScore">
+      <div class="kpi-label">Aquifer Health Score</div>
+      <div class="kpi-value"><span id="valHealthScore">52.2</span> <span class="kpi-unit">/100</span></div>
+      <div class="kpi-subtext" id="subHealthGrade">Grade: B (Moderate Stressed)</div>
+    </div>
+    
+    <div class="kpi-card" id="kpiExtraction">
+      <div class="kpi-label">Current Extraction Pressure</div>
+      <div class="kpi-value"><span id="valExtraction">1.25</span> <span class="kpi-unit">index</span></div>
+      <div class="kpi-subtext" id="subExtractionStatus">High Agri Tubewell Pumping</div>
+    </div>
+    
+    <div class="kpi-card" id="kpiRainfall">
+      <div class="kpi-label">Cumulative 30d Rainfall</div>
+      <div class="kpi-value"><span id="valRainfall">32.4</span> <span class="kpi-unit">mm</span></div>
+      <div class="kpi-subtext" id="subRainfallDeficit">Deficit: -22.5% vs Normal</div>
+    </div>
+  </section>
+
+  <!-- Navigation Tabs -->
+  <nav class="nav-tabs-container">
+    <button class="nav-tab active" data-tab="tab-overview">
+      <span class="tab-icon">🗺️</span> Overview & GIS Map
+    </button>
+    <button class="nav-tab" data-tab="tab-forecasting">
+      <span class="tab-icon">📈</span> AI Forecasting Studio
+    </button>
+    <button class="nav-tab" data-tab="tab-what-if">
+      <span class="tab-icon">🎛️</span> What-If Policy Simulator
+    </button>
+    <button class="nav-tab" data-tab="tab-risk-alerts">
+      <span class="tab-icon">🚨</span> Risk & Early Warnings
+    </button>
+    <button class="nav-tab" data-tab="tab-xai">
+      <span class="tab-icon">💡</span> Explainable AI (SHAP)
+    </button>
+    <button class="nav-tab" data-tab="tab-anomalies">
+      <span class="tab-icon">⚡</span> Anomaly Detection
+    </button>
+    <button class="nav-tab" data-tab="tab-recovery">
+      <span class="tab-icon">⏳</span> Recovery & Climate Stress
+    </button>
+    <button class="nav-tab" data-tab="tab-recommendations">
+      <span class="tab-icon">🛡️</span> Smart Recommendations
+    </button>
+    <button class="nav-tab" data-tab="tab-research">
+      <span class="tab-icon">📊</span> Research Benchmark & Ablation
+    </button>
+  </nav>
+
+  <!-- Main Content Layout -->
+  <main class="main-container">
+    
+    <!-- TAB 1: OVERVIEW & GIS MAP -->
+    <div class="tab-pane active" id="tab-overview">
+      <div class="dashboard-grid-2col">
+        <div class="panel map-panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Aquifer Basin GIS Monitoring Map</h2>
+              <p class="panel-subtitle">Interactive geographical markers colored by dynamic risk level</p>
+            </div>
+            <div class="map-legend">
+              <span class="legend-chip"><span class="dot dot-green"></span> Low Risk</span>
+              <span class="legend-chip"><span class="dot dot-amber"></span> Moderate</span>
+              <span class="legend-chip"><span class="dot dot-orange"></span> High</span>
+              <span class="legend-chip"><span class="dot dot-red"></span> Critical</span>
+            </div>
+          </div>
+          <div id="gisMap" class="gis-map-canvas"></div>
+        </div>
+
+        <div class="panel well-meta-panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Selected Well Hydrogeology</h2>
+            <span class="badge" id="selectedWellBadge">WELL-01</span>
+          </div>
+          <div class="meta-content" id="wellMetaContent">
+            <div class="meta-row">
+              <span class="meta-name">Station Name</span>
+              <span class="meta-val" id="metaStationName">Central Alluvial Station</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-name">Aquifer Hydrogeology</span>
+              <span class="meta-val" id="metaAquiferType">Unconfined Alluvial</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-name">Specific Yield (Sy)</span>
+              <span class="meta-val" id="metaSpecificYield">0.14</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-name">Surface Elevation</span>
+              <span class="meta-val" id="metaElevation">216.0 m AMSL</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-name">Safe Water Table Threshold</span>
+              <span class="meta-val highlight-safe" id="metaSafeDepth">14.0 m bgl</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-name">Critical Depletion Threshold</span>
+              <span class="meta-val highlight-crit" id="metaCritDepth">28.0 m bgl</span>
+            </div>
+            <div class="meta-description" id="metaDescription">
+              Dense multi-crop agricultural and peri-urban zone with high tubewell density.
+            </div>
+          </div>
+          
+          <div class="trend-card">
+            <h3>Recent 90-Day Hydrologic Dynamic</h3>
+            <div class="chart-container-compact">
+              <canvas id="overviewMiniChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: AI FORECASTING STUDIO -->
+    <div class="tab-pane" id="tab-forecasting">
+      <div class="panel">
+        <div class="panel-header flex-wrap">
+          <div>
+            <h2 class="panel-title">Multi-Horizon Groundwater Level Forecasting</h2>
+            <p class="panel-subtitle">Seamless integration of historical observed telemetry and AI multi-step projections with 95% confidence bands</p>
+          </div>
+          <div class="toolbar-controls">
+            <div class="btn-group" id="horizonButtonGroup">
+              <button class="btn btn-sm btn-outline" data-horizon="7d">7 Days</button>
+              <button class="btn btn-sm btn-outline active" data-horizon="30d">30 Days</button>
+              <button class="btn btn-sm btn-outline" data-horizon="3m">3 Months</button>
+              <button class="btn btn-sm btn-outline" data-horizon="6m">6 Months</button>
+              <button class="btn btn-sm btn-outline" data-horizon="12m">12 Months</button>
+            </div>
+            <div class="model-select-group">
+              <label for="forecastModelSelect">Model:</label>
+              <select id="forecastModelSelect" class="form-select form-select-sm">
+                <option value="Random Forest" selected>Random Forest (Champion - R² 0.999)</option>
+                <option value="XGBoost">XGBoost (R² 0.998)</option>
+                <option value="GRU">Deep GRU RNN (R² 0.976)</option>
+                <option value="LSTM">Deep LSTM RNN (R² 0.935)</option>
+                <option value="SARIMA">SARIMA Baseline</option>
+                <option value="ARIMA">ARIMA Baseline</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-container-large">
+          <canvas id="forecastMainChart"></canvas>
+        </div>
+
+        <div class="forecast-insights-bar">
+          <div class="insight-box">
+            <span class="insight-label">Current Observed Level</span>
+            <span class="insight-value" id="fcStartObserved">25.30 m</span>
+          </div>
+          <div class="insight-box">
+            <span class="insight-label">Forecasted Horizon End Level</span>
+            <span class="insight-value" id="fcEndForecast">24.37 m</span>
+          </div>
+          <div class="insight-box">
+            <span class="insight-label">Net Projected Change</span>
+            <span class="insight-value" id="fcNetChange">-0.93 m (Replenishment)</span>
+          </div>
+          <div class="insight-box">
+            <span class="insight-label">Critical Threshold Margin</span>
+            <span class="insight-value" id="fcMargin">+3.63 m above critical</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: WHAT-IF WATER MANAGEMENT SIMULATOR -->
+    <div class="tab-pane" id="tab-what-if">
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">What-If Water Management Policy Simulator</h2>
+            <p class="panel-subtitle">Major Differentiating Feature: Evaluate extraction reductions (10%, 20%, 30%) and custom policies overlaid on the SAME graph</p>
+          </div>
+          <span class="badge badge-accent">Interactive Multi-Scenario Engine</span>
+        </div>
+
+        <div class="simulator-layout">
+          <!-- Interactive Policy Sliders -->
+          <div class="sim-controls-card">
+            <h3 class="sim-card-title">Policy & Environmental Controls</h3>
+            
+            <div class="control-slider-group">
+              <div class="slider-header">
+                <label for="sliderExtraction">Groundwater Extraction Rate Adjustment</label>
+                <span class="slider-value" id="valSliderExtraction">-15%</span>
+              </div>
+              <input type="range" id="sliderExtraction" min="-50" max="50" step="5" value="-15" class="range-slider">
+              <span class="slider-hint">-50% (Strict Conservation) to +50% (Unregulated Pumping)</span>
+            </div>
+
+            <div class="control-slider-group">
+              <div class="slider-header">
+                <label for="sliderRecharge">Artificial Recharge Injection Volume</label>
+                <span class="slider-value" id="valSliderRecharge">600 m³/day</span>
+              </div>
+              <input type="range" id="sliderRecharge" min="0" max="3000" step="100" value="600" class="range-slider">
+              <span class="slider-hint">Percolation shafts & injection well injection volume</span>
+            </div>
+
+            <div class="control-slider-group">
+              <div class="slider-header">
+                <label for="sliderRainfall">Rainfall Anomaly Assumption</label>
+                <span class="slider-value" id="valSliderRainfall">0% (Normal)</span>
+              </div>
+              <input type="range" id="sliderRainfall" min="-40" max="40" step="5" value="0" class="range-slider">
+              <span class="slider-hint">-40% (Meteorological Drought) to +40% (Surplus Monsoon)</span>
+            </div>
+
+            <div class="control-slider-group">
+              <div class="slider-header">
+                <label for="sliderHorizon">Simulation Forecast Horizon</label>
+                <span class="slider-value" id="valSliderHorizon">180 Days</span>
+              </div>
+              <input type="range" id="sliderHorizon" min="30" max="365" step="30" value="180" class="range-slider">
+            </div>
+
+            <button id="btnRunSimulation" class="btn btn-primary btn-block">
+              <span class="btn-icon">⚡</span> Run Comparative Simulation
+            </button>
+          </div>
+
+          <!-- Comparative Multi-Curve Chart & Summary -->
+          <div class="sim-chart-card">
+            <div class="chart-container-large">
+              <canvas id="whatIfChart"></canvas>
+            </div>
+            
+            <div class="table-responsive mt-3">
+              <table class="table-dark" id="scenarioComparisonTable">
+                <thead>
+                  <tr>
+                    <th>Scenario</th>
+                    <th>Policy Description</th>
+                    <th>Final Projected Level</th>
+                    <th>Water Table Preserved</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="scenarioTableBody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: RISK ASSESSMENT & EARLY WARNINGS -->
+    <div class="tab-pane" id="tab-risk-alerts">
+      <div class="dashboard-grid-2col">
+        <!-- Dynamic Risk Index Gauge & Breakdown -->
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Dynamic Groundwater Risk Index (0–100)</h2>
+            <span class="badge" id="riskCategoryBadge">Moderate Risk</span>
+          </div>
+
+          <div class="risk-gauge-container">
+            <div class="circular-gauge">
+              <svg viewBox="0 0 36 36" class="circular-chart">
+                <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                <path id="gaugeRiskCircle" class="circle-fill" stroke-dasharray="39.7, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+              </svg>
+              <div class="gauge-center-text">
+                <div class="gauge-number" id="riskGaugeScore">39.7</div>
+                <div class="gauge-unit">Risk Index</div>
+              </div>
+            </div>
+            <div class="risk-scale-legend">
+              <div class="scale-bar"></div>
+              <div class="scale-labels">
+                <span>0 Low</span>
+                <span>30 Moderate</span>
+                <span>60 High</span>
+                <span>80 Critical 100</span>
+              </div>
+            </div>
+          </div>
+
+          <h3 class="subsection-title">Dynamic Risk Attribution Factors</h3>
+          <div class="factor-progress-list" id="riskFactorsList">
+            <!-- Dynamic risk factor bars -->
+          </div>
+        </div>
+
+        <!-- Early Warning System -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">AI Early-Warning Alert System</h2>
+              <p class="panel-subtitle">Concrete critical breach countdowns and projected temporal windows</p>
+            </div>
+            <span class="badge badge-warning" id="activeAlertCount">1 Active Alert</span>
+          </div>
+
+          <div class="alerts-feed" id="alertsFeed">
+            <!-- Dynamic alerts -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: EXPLAINABLE AI (SHAP) -->
+    <div class="tab-pane" id="tab-xai">
+      <div class="dashboard-grid-2col">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Global Feature Importance (SHAP)</h2>
+              <p class="panel-subtitle">Mean absolute SHAP value attribution across historical data</p>
+            </div>
+            <span class="badge">TreeExplainer</span>
+          </div>
+          <div class="chart-container-large">
+            <canvas id="xaiGlobalChart"></canvas>
+          </div>
+          <div class="xai-summary-quote" id="xaiGlobalQuote">
+            The dominant driver of future groundwater level is the auto-regressive lag memory (76.6%), augmented by extraction pumping rate and cumulative 30-day precipitation.
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Local Prediction Explanation</h2>
+              <p class="panel-subtitle">Why is the groundwater level predicted to increase or decrease on a specific forecast day?</p>
+            </div>
+            <div class="control-row-inline">
+              <label for="xaiDayOffset">Forecast Day:</label>
+              <select id="xaiDayOffset" class="form-select form-select-sm">
+                <option value="7">Day +7</option>
+                <option value="15" selected>Day +15</option>
+                <option value="30">Day +30</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Natural language diagnostic quote box -->
+          <div class="nlp-diagnostic-card">
+            <div class="nlp-icon">🤖</div>
+            <div class="nlp-content">
+              <div class="nlp-title">AI Diagnostic Attribution Summary:</div>
+              <p class="nlp-text" id="xaiLocalDiagnosis">Loading local attribution...</p>
+            </div>
+          </div>
+
+          <h3 class="subsection-title mt-3">SHAP Waterfall Local Contributions (Meters of Drawdown / Rise)</h3>
+          <div class="chart-container-medium">
+            <canvas id="xaiWaterfallChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 6: ANOMALY DETECTION LAB -->
+    <div class="tab-pane" id="tab-anomalies">
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">Groundwater Anomaly Detection Lab</h2>
+            <p class="panel-subtitle">Dual-method Isolation Forest & Statistical Z-score outlier detection directly on the time series</p>
+          </div>
+          <div class="anom-stats-ribbon">
+            <span class="stat-pill" id="anomTotalCount">Total Anomalies: 44</span>
+            <span class="stat-pill" id="anomPct">Rate: 2.01%</span>
+          </div>
+        </div>
+
+        <div class="chart-container-large">
+          <canvas id="anomalyScatterChart"></canvas>
+        </div>
+
+        <div class="table-responsive mt-3">
+          <table class="table-dark" id="anomaliesTable">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Water Table (m bgl)</th>
+                <th>Detected Anomaly Classification</th>
+                <th>Severity</th>
+                <th>Isolation Score</th>
+                <th>Rainfall (mm)</th>
+                <th>Extraction</th>
+              </tr>
+            </thead>
+            <tbody id="anomaliesTableBody">
+              <!-- Dynamic rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 7: GROUNDWATER RECOVERY & CLIMATE STRESS -->
+    <div class="tab-pane" id="tab-recovery">
+      <div class="dashboard-grid-2col">
+        <!-- Recovery Prediction -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Groundwater Recovery Prediction</h2>
+              <p class="panel-subtitle">Vadose percolation lag, daily recovery rate (m/day), and expected days to replenish</p>
+            </div>
+            <span class="badge badge-accent">Post-Rainfall Response</span>
+          </div>
+
+          <div class="recovery-inputs-grid">
+            <div class="control-slider-group">
+              <div class="slider-header">
+                <label for="recRainEvent">Planned Infiltration / Rain Event (mm)</label>
+                <span class="slider-value" id="valRecRain">80 mm</span>
+              </div>
+              <input type="range" id="recRainEvent" min="20" max="250" step="10" value="80" class="range-slider">
+            </div>
+
+            <div class="control-slider-group">
+              <div class="slider-header">
+                <label for="recCond">Soil Hydraulic Conductivity (m/day)</label>
+                <span class="slider-value" id="valRecCond">2.0 m/d</span>
+              </div>
+              <input type="range" id="recCond" min="0.5" max="8.0" step="0.5" value="2.0" class="range-slider">
+            </div>
+          </div>
+
+          <div class="recovery-stats-grid mt-2" id="recoveryStatsGrid">
+            <div class="rec-stat-card">
+              <div class="rec-stat-label">Infiltration Lag</div>
+              <div class="rec-stat-val" id="recLagVal">11 Days</div>
+            </div>
+            <div class="rec-stat-card">
+              <div class="rec-stat-label">90% Recovery Period</div>
+              <div class="rec-stat-val" id="recPeriodVal">42 Days</div>
+            </div>
+            <div class="rec-stat-card">
+              <div class="rec-stat-label">Total Water Table Rise</div>
+              <div class="rec-stat-val" id="recRiseVal">+0.47 m</div>
+            </div>
+            <div class="rec-stat-card">
+              <div class="rec-stat-label">Peak Recovery Rate</div>
+              <div class="rec-stat-val" id="recPeakRateVal">0.024 m/d</div>
+            </div>
+          </div>
+
+          <div class="chart-container-medium mt-3">
+            <canvas id="recoveryCurveChart"></canvas>
+          </div>
+
+          <div class="nlp-diagnostic-card mt-3">
+            <p class="nlp-text" id="recInterpretationText">Computing recharge physics...</p>
+          </div>
+        </div>
+
+        <!-- Climate Change Stress Analysis -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Climate Change Scenario Stress Analysis</h2>
+              <p class="panel-subtitle">Simulated vulnerability under IPCC climate scenarios (Dry, Wet, Warming)</p>
+            </div>
+            <span class="badge badge-warning">Simulated Projections</span>
+          </div>
+
+          <div class="disclaimer-alert">
+            <span class="alert-icon">⚠️</span>
+            <span>Academic Note: The following curves are hypothetical stress-testing models, not actual time-series predictions.</span>
+          </div>
+
+          <div class="chart-container-large mt-2">
+            <canvas id="climateChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 8: AQUIFER HEALTH & SMART RECOMMENDATIONS -->
+    <div class="tab-pane" id="tab-recommendations">
+      <div class="dashboard-grid-2col">
+        <!-- Aquifer Health Score -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Overall Aquifer Health Score (0–100)</h2>
+              <p class="panel-subtitle">Integrated multi-pillar score assessing long-term aquifer stability</p>
+            </div>
+            <span class="badge badge-accent" id="healthGradeBadge">Grade: B</span>
+          </div>
+
+          <div class="health-score-hero">
+            <div class="health-score-display">
+              <span class="big-score" id="healthBigScore">52.2</span>
+              <span class="big-score-denom">/100</span>
+            </div>
+            <div class="health-meta-col">
+              <div class="health-status-title" id="healthStatusTitle">Moderate / Stressed</div>
+              <p class="health-desc" id="healthStatusDesc">Extraction pressure is approaching seasonal replenishment capacity. Increased monitoring advised.</p>
+            </div>
+          </div>
+
+          <div class="disclaimer-alert mt-2">
+            <span class="alert-icon">ℹ️</span>
+            <span>Disclaimer: The Aquifer Health Score is a project-developed decision indicator; not an official regulatory measurement.</span>
+          </div>
+
+          <h3 class="subsection-title mt-3">Six-Pillar Health Radar Breakdown</h3>
+          <div class="chart-container-medium">
+            <canvas id="healthRadarChart"></canvas>
+          </div>
+
+          <div class="factors-table-wrap mt-3">
+            <table class="table-dark" id="healthFactorsTable">
+              <thead>
+                <tr>
+                  <th>Health Pillar</th>
+                  <th>Points</th>
+                  <th>Status</th>
+                  <th>Diagnostic Observation</th>
+                </tr>
+              </thead>
+              <tbody id="healthFactorsTableBody">
+                <!-- Dynamically generated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- AI Recharge Recommendations -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">AI-Based Recharge & Conservation Recommendations</h2>
+              <p class="panel-subtitle">Dynamic civil engineering and demand mitigation actions tailored to forecasted conditions</p>
+            </div>
+            <span class="badge">Expert Decision Engine</span>
+          </div>
+
+          <div class="recs-quote-box" id="recsQuoteBox">
+            <div class="recs-quote-header">Primary Decision Directive:</div>
+            <p class="recs-quote-text" id="recsExecutiveQuote">Loading recommendation directive...</p>
+          </div>
+
+          <div class="recs-actions-grid mt-3" id="recsActionsGrid">
+            <!-- Dynamic recommendation cards -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 9: RESEARCH BENCHMARK & ABLATION LAB -->
+    <div class="tab-pane" id="tab-research">
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">Empirical Model Comparison Benchmark (Section 17)</h2>
+            <p class="panel-subtitle">Rigorous side-by-side evaluation across MAE, RMSE, MAPE, R², and Training Execution Time</p>
+          </div>
+          <span class="badge badge-accent">Champion: Random Forest</span>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table-dark table-striped" id="researchBenchmarkTable">
+            <thead>
+              <tr>
+                <th>Model Architecture</th>
+                <th>Model Category</th>
+                <th>MAE (m)</th>
+                <th>RMSE (m)</th>
+                <th>MAPE (%)</th>
+                <th>R² Score</th>
+                <th>Training Time (s)</th>
+                <th>Evaluation Status</th>
+              </tr>
+            </thead>
+            <tbody id="researchBenchmarkTableBody">
+              <!-- Dynamic rows -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="chart-container-large mt-4">
+          <canvas id="modelComparisonTestChart"></canvas>
+        </div>
+      </div>
+
+      <div class="panel mt-4">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">Research Ablation Study (Section 18)</h2>
+            <p class="panel-subtitle">Systematic validation demonstrating the incremental error reduction of environmental & extraction variables</p>
+          </div>
+          <span class="badge">Scientific Validation</span>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table-dark" id="ablationTable">
+            <thead>
+              <tr>
+                <th>Feature Configuration</th>
+                <th>Feature Count</th>
+                <th>MAE (m)</th>
+                <th>RMSE (m)</th>
+                <th>MAPE (%)</th>
+                <th>R² Score</th>
+                <th>RMSE Reduction vs Baseline</th>
+              </tr>
+            </thead>
+            <tbody id="ablationTableBody">
+              <!-- Dynamic rows -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="scientific-conclusion-card mt-3" id="ablationConclusionCard">
+          <strong>Scientific Conclusion:</strong> Incorporating hydrologic drivers (precipitation and temperature) and anthropogenic extraction rate yields an over 35% error reduction over auto-regressive groundwater history alone, confirming the necessity of integrated hydro-climatic modeling.
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="app-footer">
+    <div class="footer-content">
+      <p>Final-Year AIML Capstone Project: <strong>AI-Powered Aquifer Groundwater Level Forecasting, Risk Assessment and Smart Water Management System</strong></p>
+      <p class="footer-sub">Designed with Python FastAPI, PyTorch Deep Learning, Scikit-Learn, XGBoost, and SHAP Explainable AI.</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
